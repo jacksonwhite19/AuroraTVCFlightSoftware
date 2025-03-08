@@ -2,8 +2,6 @@
 #include "MatekH743_Pinout.h"
 #include <SPI.h>
 
-// an ICM42688 object with the ICM42688 sensor on SPI bus 0 and chip select pin 10
-SPIClass spi1(SPI1_SDO_PIN, SPI1_SDI_PIN, SPI1_SCK_PIN, PNUM_NOT_DEFINED);
 ICM42688 IMU(spi1, GYRO_1_CS_PIN);
 
 void setup() {
