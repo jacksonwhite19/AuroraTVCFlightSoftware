@@ -50,5 +50,5 @@ void loop() {
     SerialUSB.println(" C");
   }
 
-  delay(1000);
+  delay(100);
 }
