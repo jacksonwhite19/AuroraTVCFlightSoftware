@@ -48,6 +48,7 @@ BarometerData readBarometer() {
   } else {
     data.pressure = pressure_event.pressure;
     data.temperature = temp_event.temperature;
+    data.temperature = (temp_event.temperature / 333.87) + 21.0;
   }
   return data;
 }

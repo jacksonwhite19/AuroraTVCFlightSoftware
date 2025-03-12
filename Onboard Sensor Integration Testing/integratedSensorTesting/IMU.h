@@ -46,7 +46,7 @@ IMUData readIMU() {
   data.gx = imu.gyrX();
   data.gy = imu.gyrY();
   data.gz = imu.gyrZ();
-  data.temp = imu.temp();
+  data.temp = (imu.temp() / 333.87) + 21.0;
   return data;
 }
 

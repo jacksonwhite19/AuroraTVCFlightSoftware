@@ -3,7 +3,6 @@
 #include "IMU.h"
 #include "Barometer.h"
 
-
 void setup() {
   SerialUSB.begin(115200);
   uint32_t startTime = millis();
@@ -11,38 +10,47 @@ void setup() {
     delay(10);
   }
   
+  // Print header with format details
+  SerialUSB.println("=== Sensor Data Output ===");
+  SerialUSB.println("Format:");
+  SerialUSB.println("[IMU] Acc: (ax, ay, az) | Gyro: (gx, gy, gz) | Temp: °C");
+  SerialUSB.println("[Barometer] Pressure: Pa | Temp: °C");
+  SerialUSB.println();
+  
   // Initialize sensors
   initIMU();
   initBarometer();
 }
 
 void loop() {
-  // Read sensor data from the IMU and Barometer
+  // Read sensor data from IMU and Barometer
   IMUData imuData = readIMU();
   BarometerData baroData = readBarometer();
 
-  // Print IMU data (accelerometer, gyroscope, and temperature)
-  SerialUSB.print(imuData.ax, 6);
-  SerialUSB.print("\t");
-  SerialUSB.print(imuData.ay, 6);
-  SerialUSB.print("\t");
-  SerialUSB.print(imuData.az, 6);
-  SerialUSB.print("\t");
-  SerialUSB.print(imuData.gx, 6);
-  SerialUSB.print("\t");
-  SerialUSB.print(imuData.gy, 6);
-  SerialUSB.print("\t");
-  SerialUSB.print(imuData.gz, 6);
-  SerialUSB.print("\t");
-  SerialUSB.print(imuData.temp, 6);
-  SerialUSB.print("\t");
+  // Print formatted IMU data
+  SerialUSB.print("[IMU] Acc: (");
+  SerialUSB.print(imuData.ax, 2);
+  SerialUSB.print(", ");
+  SerialUSB.print(imuData.ay, 2);
+  SerialUSB.print(", ");
+  SerialUSB.print(imuData.az, 2);
+  SerialUSB.print(")  |  Gyro: (");
+  SerialUSB.print(imuData.gx, 2);
+  SerialUSB.print(", ");
+  SerialUSB.print(imuData.gy, 2);
+  SerialUSB.print(", ");
+  SerialUSB.print(imuData.gz, 2);
+  SerialUSB.print(")  |  Temp: ");
+  SerialUSB.print(imuData.temp, 2);
+  SerialUSB.println(" °C");
 
-  // Print Barometer data (pressure and temperature)
-  SerialUSB.print("Pressure: ");
-  SerialUSB.print(baroData.pressure);
-  SerialUSB.print(" Pa, Temp: ");
-  SerialUSB.print(baroData.temperature);
-  SerialUSB.println(" C");
+  // Print formatted Barometer data
+  SerialUSB.print("[Barometer] Pressure: ");
+  SerialUSB.print(baroData.pressure, 2);
+  SerialUSB.print(" Pa  |  Temp: ");
+  SerialUSB.print(baroData.temperature, 2);
+  SerialUSB.println(" °C");
 
-  delay(100);
+  SerialUSB.println("------------------------------------------------------------------------------------------");
+  delay(50);
 }
