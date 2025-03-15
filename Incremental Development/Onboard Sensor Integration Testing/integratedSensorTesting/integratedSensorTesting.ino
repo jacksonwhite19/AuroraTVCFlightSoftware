@@ -2,6 +2,7 @@
 #include "MatekH743_Pinout.h"
 #include "IMU.h"
 #include "Barometer.h"
+#include "Telemetry.h"
 
 void setup() {
   SerialUSB.begin(115200);
@@ -10,13 +11,11 @@ void setup() {
     delay(10);
   }
   
-  // Print header with format details
-  SerialUSB.println("=== Sensor Data Output ===");
-  SerialUSB.println("Format:");
-  SerialUSB.println("[IMU] Acc: (ax, ay, az) | Gyro: (gx, gy, gz) | Temp: °C");
-  SerialUSB.println("[Barometer] Pressure: Pa | Temp: °C");
+  // Optional header for debugging; this can be removed for production telemetry.
+  SerialUSB.println("=== Telemetry Data Output ===");
+  SerialUSB.println("Format: $TELE,<ax>,<ay>,<az>,<gx>,<gy>,<gz>,<temp>,<pressure>,<baro_temp>*CS");
   SerialUSB.println();
-  
+
   // Initialize sensors
   initIMU();
   initBarometer();
@@ -27,30 +26,16 @@ void loop() {
   IMUData imuData = readIMU();
   BarometerData baroData = readBarometer();
 
-  // Print formatted IMU data
-  SerialUSB.print("[IMU] Acc: (");
-  SerialUSB.print(imuData.ax, 2);
-  SerialUSB.print(", ");
-  SerialUSB.print(imuData.ay, 2);
-  SerialUSB.print(", ");
-  SerialUSB.print(imuData.az, 2);
-  SerialUSB.print(")  |  Gyro: (");
-  SerialUSB.print(imuData.gx, 2);
-  SerialUSB.print(", ");
-  SerialUSB.print(imuData.gy, 2);
-  SerialUSB.print(", ");
-  SerialUSB.print(imuData.gz, 2);
-  SerialUSB.print(")  |  Temp: ");
-  SerialUSB.print(imuData.temp, 2);
-  SerialUSB.println(" °C");
+  // Create a telemetry packet using the sensor values
+  String telemetryPacket = createTelemetryPacket(
+    imuData.ax, imuData.ay, imuData.az,
+    imuData.gx, imuData.gy, imuData.gz,
+    imuData.temp,
+    baroData.pressure, baroData.temperature
+  );
 
-  // Print formatted Barometer data
-  SerialUSB.print("[Barometer] Pressure: ");
-  SerialUSB.print(baroData.pressure, 2);
-  SerialUSB.print(" Pa  |  Temp: ");
-  SerialUSB.print(baroData.temperature, 2);
-  SerialUSB.println(" °C");
+  // Transmit the telemetry packet over SerialUSB (to the xBee module)
+  SerialUSB.println(telemetryPacket);
 
-  SerialUSB.println("------------------------------------------------------------------------------------------");
   delay(50);
 }

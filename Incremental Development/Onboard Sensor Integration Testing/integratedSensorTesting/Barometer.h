@@ -6,6 +6,7 @@
 #include <Wire.h>
 #include <Adafruit_DPS310.h>
 #include <Adafruit_Sensor.h>
+#include "Telemetry.h"
 
 // Define the DPS310 I2C address
 #define DPS310_ADDR 0x76

@@ -4,6 +4,7 @@
 #include "MatekH743_Pinout.h"
 #include "ICM42688.h"
 #include <Arduino.h>
+#include "Telemetry.h"
 
 // Create an instance of the ICM42688 sensor using spi1 and the defined chip-select pin.
 ICM42688 imu(spi1, GYRO_1_CS_PIN);
