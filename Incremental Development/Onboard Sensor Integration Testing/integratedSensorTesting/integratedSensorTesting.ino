@@ -1,41 +1,37 @@
-#include <SPI.h>
 #include "MatekH743_Pinout.h"
 #include "IMU.h"
 #include "Barometer.h"
 #include "Telemetry.h"
+#include "GPS.h"   // Include the header-only GPS library
 
 void setup() {
   SerialUSB.begin(115200);
-  uint32_t startTime = millis();
-  while (!SerialUSB && millis() - startTime < 3000) {
-    delay(10);
-  }
+  // Wait for SerialUSB to initialize...
   
-  // Optional header for debugging; this can be removed for production telemetry.
+  // Print telemetry header (update format as needed)
   SerialUSB.println("=== Telemetry Data Output ===");
-  SerialUSB.println("Format: $TELE,<ax>,<ay>,<az>,<gx>,<gy>,<gz>,<temp>,<pressure>,<baro_temp>*CS");
+  SerialUSB.println("Format: $TELE,<ax>,<ay>,<az>,<gx>,<gy>,<gz>,<temp>,<pressure>,<baro_temp>,<lat>,<lon>,<alt>*CS");
   SerialUSB.println();
-
+  
   // Initialize sensors
   initIMU();
   initBarometer();
+  initGPS();  // Initialize GPS via the header-only functions
 }
 
 void loop() {
-  // Read sensor data from IMU and Barometer
   IMUData imuData = readIMU();
   BarometerData baroData = readBarometer();
+  GPSData gpsData = readGPS();
 
-  // Create a telemetry packet using the sensor values
   String telemetryPacket = createTelemetryPacket(
     imuData.ax, imuData.ay, imuData.az,
     imuData.gx, imuData.gy, imuData.gz,
     imuData.temp,
-    baroData.pressure, baroData.temperature
+    baroData.pressure, baroData.temperature,
+    gpsData.latitude, gpsData.longitude, gpsData.altitude
   );
 
-  // Transmit the telemetry packet over SerialUSB (to the xBee module)
   SerialUSB.println(telemetryPacket);
-
   delay(50);
 }
