@@ -25,16 +25,16 @@ void initIMU() {
   SPI.begin();
   int status = imu.begin();
   if (status < 0) {
-    SerialUSB.println("IMU initialization unsuccessful");
-    SerialUSB.println("Check IMU wiring or try cycling power");
-    SerialUSB.print("Status: ");
-    SerialUSB.println(status);
+    Serial.println("IMU initialization unsuccessful");
+    Serial.println("Check IMU wiring or try cycling power");
+    Serial.print("Status: ");
+    Serial.println(status);
     while (1) {
       // Halt execution if the sensor fails to initialize.
       delay(10);
     }
   }
-  SerialUSB.println("ax,ay,az,gx,gy,gz,temp_C");
+  Serial.println("ax,ay,az,gx,gy,gz,temp_C");
 }
 
 // Function to read data from the IMU sensor (adapted from your IMUTesting.ino loop)

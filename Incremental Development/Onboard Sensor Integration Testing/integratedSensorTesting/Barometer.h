@@ -28,12 +28,12 @@ void initBarometer() {
   myI2C2.begin();
 
   if (!dps.begin_I2C(DPS310_ADDR, &myI2C2)) {
-    SerialUSB.println("Could not find a valid DPS310 sensor, check wiring!");
+    Serial.println("Could not find a valid DPS310 sensor, check wiring!");
     while (1) {
       delay(10);
     }
   }
-  SerialUSB.println("DPS310 sensor found!");
+  Serial.println("DPS310 sensor found!");
 }
 
 // Function to read data from the barometer sensor (adapted from your baroTesting.ino loop)
@@ -42,7 +42,7 @@ BarometerData readBarometer() {
   sensors_event_t pressure_event, temp_event;
 
   if (!dps.getEvents(&pressure_event, &temp_event)) {
-    SerialUSB.println("Sensor read error");
+    Serial.println("Sensor read error");
     // Optionally, you could set error values here.
     data.pressure = NAN;
     data.temperature = NAN;

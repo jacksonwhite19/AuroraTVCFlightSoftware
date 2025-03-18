@@ -6,7 +6,7 @@
 
 // Helper function: calculates checksum by XOR-ing every character in the sentence.
 // The input should be the string without the starting '$'.
-String calculateChecksum(const String &sentence) {
+inline String calculateChecksum(const String &sentence) {
   byte cs = 0;
   for (size_t i = 0; i < sentence.length(); i++) {
     cs ^= sentence.charAt(i);
@@ -20,13 +20,15 @@ String calculateChecksum(const String &sentence) {
 
 // Function: creates a telemetry packet in an NMEA-like format.
 // Fields are: ax, ay, az, gx, gy, gz, IMU temperature, barometer pressure, 
-// barometer temperature, GPS latitude, GPS longitude, and GPS altitude.
+// barometer temperature, GPS latitude, GPS longitude, GPS altitude, GPS SIV,
+// GPS minute, GPS second, and GPS millisecond.
 // It prefixes the packet with "$TELE," and appends "*XX" (where XX is the checksum) at the end.
-String createTelemetryPacket(float ax, float ay, float az,
-                             float gx, float gy, float gz,
-                             float imuTemp,
-                             float baroPressure, float baroTemp,
-                             long gpsLat, long gpsLon, long gpsAlt) {
+inline String createTelemetryPacket(float ax, float ay, float az,
+                                    float gx, float gy, float gz,
+                                    float imuTemp,
+                                    float baroPressure, float baroTemp,
+                                    long gpsLat, long gpsLon, long gpsAlt,
+                                    byte gpsSIV, int gpsMin, int gpsSec, int gpsMs) {
   String packet = "$TELE,";
   packet += String(ax, 2) + ",";
   packet += String(ay, 2) + ",";
@@ -39,7 +41,11 @@ String createTelemetryPacket(float ax, float ay, float az,
   packet += String(baroTemp, 2) + ",";
   packet += String(gpsLat) + ",";
   packet += String(gpsLon) + ",";
-  packet += String(gpsAlt);
+  packet += String(gpsAlt) + ",";
+  packet += String(gpsSIV) + ",";
+  packet += String(gpsMin) + ",";
+  packet += String(gpsSec) + ",";
+  packet += String(gpsMs);
   
   // Calculate checksum on the packet excluding the '$'
   String cs = calculateChecksum(packet.substring(1));
