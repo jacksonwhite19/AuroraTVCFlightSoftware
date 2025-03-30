@@ -1,29 +1,34 @@
-#include <SoftwareSerial.h>
-#include "MatekH743_Pinout.h"  // This file defines UART7_TX_PIN (PE8) and UART7_RX_PIN (PE7)
+#include "MatekH743_Pinout.h"  // Defines UART7_TX_PIN (PE8), UART7_RX_PIN (PE7), and UART7_BASE
+#include <HardwareSerial.h>
 
-// Create a SoftwareSerial instance on UART7 pins: 
-// Note: The first parameter is the RX pin, the second is the TX pin.
-SoftwareSerial flightSerial(UART7_RX_PIN, UART7_TX_PIN);
+// Create a HardwareSerial instance for UART7 using its base address and assigned pins.
+HardwareSerial mySerial7(UART7_BASE, UART7_RX_PIN, UART7_TX_PIN);
 
 void setup() {
-  // Initialize USB serial for debugging on your computer.
   Serial.begin(115200);
-  while (!Serial) { } // Wait for the Serial Monitor to connect
+  while (!Serial) { }
+  Serial.println("Hardware Serial test on UART7 with manual pin configuration");
 
-  Serial.println("FlightModule Serial Test Starting...");
-
-  // Initialize the SoftwareSerial port for UART7.
-  // Ensure that the baud rate (here, 9600) matches your XBee configuration.
-  flightSerial.begin(9600);
+  mySerial7.begin(9600);  // Ensure this baud rate matches your XBee settings
+  Serial.println("mySerial7 initialized at 9600 baud");
 }
 
 void loop() {
-  // Send a simple message over UART7 to the groundstation.
-  flightSerial.println("Hello from FlightModule");
+  static unsigned long msgCount = 0;
+  msgCount++;
 
-  // Also print to USB serial for debugging purposes.
-  Serial.println("Sent: Hello from FlightModule");
+  // Create a simple C-style string for the message.
+  char message[100];
+  snprintf(message, sizeof(message), "Hello from FlightModule, msg #%lu", msgCount);
 
-  // Wait 1 second before sending the next message.
+  // Transmit the message over UART7
+  mySerial7.println(message);
+  
+  // Debug output on USB Serial
+  Serial.print("Loop iteration ");
+  Serial.print(msgCount);
+  Serial.print(" - Sent: ");
+  Serial.println(message);
+
   delay(1000);
 }
