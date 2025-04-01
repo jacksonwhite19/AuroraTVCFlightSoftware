@@ -1,29 +1,47 @@
+#include "MatekH743_Pinout.h"  // Defines UART7_TX_PIN (PE8) and UART7_RX_PIN (PE7)
+/*****************************************************************
+XBee_Serial_Passthrough.ino
+
+Set up a software serial port to pass data between an XBee Shield
+and the serial monitor.
+
+Hardware Hookup:
+  The XBee Shield makes all of the connections you'll need
+  between Arduino and XBee. If you have the shield make
+  sure the SWITCH IS IN THE "DLINE" POSITION. That will connect
+  the XBee's DOUT and DIN pins to Arduino pins 2 and 3.
+
+*****************************************************************/
+// We'll use SoftwareSerial to communicate with the XBee:
 #include <SoftwareSerial.h>
-#include "MatekH743_Pinout.h"  // This file defines UART7_TX_PIN (PE8) and UART7_RX_PIN (PE7)
+  int i =0;
+//For Atmega328P's
+// XBee's DOUT (TX) is connected to pin 2 (Arduino's Software RX)
+// XBee's DIN (RX) is connected to pin 3 (Arduino's Software TX)
+SoftwareSerial XBee(PD6, PD5); // RX, TX
 
-// Create a SoftwareSerial instance on UART7 pins: 
-// Note: The first parameter is the RX pin, the second is the TX pin.
-SoftwareSerial flightSerial(UART7_RX_PIN, UART7_TX_PIN);
+//For Atmega2560, ATmega32U4, etc.
+// XBee's DOUT (TX) is connected to pin 10 (Arduino's Software RX)
+// XBee's DIN (RX) is connected to pin 11 (Arduino's Software TX)
+//SoftwareSerial XBee(10, 11); // RX, TX
 
-void setup() {
-  // Initialize USB serial for debugging on your computer.
-  Serial.begin(115200);
-  while (!Serial) { } // Wait for the Serial Monitor to connect
-
-  Serial.println("FlightModule Serial Test Starting...");
-
-  // Initialize the SoftwareSerial port for UART7.
-  // Ensure that the baud rate (here, 9600) matches your XBee configuration.
-  flightSerial.begin(9600);
+void setup()
+{
+  // Set up both ports at 9600 baud. This value is most important
+  // for the XBee. Make sure the baud rate matches the config
+  // setting of your XBee.
+  XBee.begin(9600);
+  Serial.begin(9600);
 }
 
-void loop() {
-  // Send a simple message over UART7 to the groundstation.
-  flightSerial.println("Hello from FlightModule");
-
-  // Also print to USB serial for debugging purposes.
-  Serial.println("Sent: Hello from FlightModule");
-
-  // Wait 1 second before sending the next message.
-  delay(1000);
+void loop()
+{
+  if (Serial.available())
+  { // If data comes in from serial monitor, send it out to XBee
+    XBee.print(Serial.read());
+  }
+  if (XBee.available())
+  { // If data comes in from XBee, send it out to serial monitor
+    Serial.print(XBee.read());
+  }
 }
