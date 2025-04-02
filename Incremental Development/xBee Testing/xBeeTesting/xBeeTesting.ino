@@ -1,47 +1,23 @@
 #include "MatekH743_Pinout.h"  // Defines UART7_TX_PIN (PE8) and UART7_RX_PIN (PE7)
-/*****************************************************************
-XBee_Serial_Passthrough.ino
-
-Set up a software serial port to pass data between an XBee Shield
-and the serial monitor.
-
-Hardware Hookup:
-  The XBee Shield makes all of the connections you'll need
-  between Arduino and XBee. If you have the shield make
-  sure the SWITCH IS IN THE "DLINE" POSITION. That will connect
-  the XBee's DOUT and DIN pins to Arduino pins 2 and 3.
-
-*****************************************************************/
-// We'll use SoftwareSerial to communicate with the XBee:
 #include <SoftwareSerial.h>
-  int i =0;
-//For Atmega328P's
-// XBee's DOUT (TX) is connected to pin 2 (Arduino's Software RX)
-// XBee's DIN (RX) is connected to pin 3 (Arduino's Software TX)
 SoftwareSerial XBee(PD6, PD5); // RX, TX
 
-//For Atmega2560, ATmega32U4, etc.
-// XBee's DOUT (TX) is connected to pin 10 (Arduino's Software RX)
-// XBee's DIN (RX) is connected to pin 11 (Arduino's Software TX)
-//SoftwareSerial XBee(10, 11); // RX, TX
-
-void setup()
-{
-  // Set up both ports at 9600 baud. This value is most important
-  // for the XBee. Make sure the baud rate matches the config
-  // setting of your XBee.
-  XBee.begin(9600);
-  Serial.begin(9600);
+void setup() {
+  Serial.begin(9600);                // Start communication with the PC for debugging
+  XBee.begin(9600);                  // Start communication with the XBee module
+ 
+  randomSeed(analogRead(0));         // Seed the random number generator for varied results
 }
-
-void loop()
-{
-  if (Serial.available())
-  { // If data comes in from serial monitor, send it out to XBee
-    XBee.print(Serial.read());
-  }
-  if (XBee.available())
-  { // If data comes in from XBee, send it out to serial monitor
-    Serial.print(XBee.read());
-  }
+ 
+void loop() {
+  int randomNumber = random(256);    // Generate a random number between 0 and 255
+  
+  XBee.print('<');                   // Start of transmission marker
+  XBee.print(randomNumber);          // Send the randomly generated number
+  XBee.println('>');                 // End of transmission marker
+ 
+  Serial.print("Sent number: ");     // Debugging output to Serial Monitor
+  Serial.println(randomNumber);
+ 
+  delay(1000);                       // Delay between sends to avoid flooding
 }
