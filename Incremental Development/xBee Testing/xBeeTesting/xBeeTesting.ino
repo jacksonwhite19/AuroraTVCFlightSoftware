@@ -1,23 +1,24 @@
 #include "MatekH743_Pinout.h"  // Defines UART7_TX_PIN (PE8) and UART7_RX_PIN (PE7)
 #include <SoftwareSerial.h>
-SoftwareSerial XBee(PD6, PD5); // RX, TX
+SoftwareSerial XBee(PC7, PC6); // RX, TX
 
-void setup() {
-  Serial.begin(9600);                // Start communication with the PC for debugging
-  XBee.begin(9600);                  // Start communication with the XBee module
- 
-  randomSeed(analogRead(0));         // Seed the random number generator for varied results
+void setup()
+{
+  // Set up both ports at 9600 baud. This value is most important
+  // for the XBee. Make sure the baud rate matches the config
+  // setting of your XBee.
+  XBee.begin(9600);
+  Serial.begin(9600);
 }
- 
-void loop() {
-  int randomNumber = random(256);    // Generate a random number between 0 and 255
-  
-  XBee.print('<');                   // Start of transmission marker
-  XBee.print(randomNumber);          // Send the randomly generated number
-  XBee.println('>');                 // End of transmission marker
- 
-  Serial.print("Sent number: ");     // Debugging output to Serial Monitor
-  Serial.println(randomNumber);
- 
-  delay(1000);                       // Delay between sends to avoid flooding
+
+void loop()
+{
+  if (Serial.available())
+  { // If data comes in from serial monitor, send it out to XBee
+    XBee.write(Serial.read());
+  }
+  if (XBee.available())
+  { // If data comes in from XBee, send it out to serial monitor
+    Serial.write(XBee.read());
+  }
 }
