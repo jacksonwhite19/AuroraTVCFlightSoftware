@@ -1,3 +1,7 @@
+// as of 4/7: code works well, need to integrate LIDAR into it. all other sensors functioning normally.
+// has a psuedo packet telem system worked out, this seems like a problem that should be addressed
+// once everything else is integrated and I know exactly how much data I need to transmit.
+
 #include "MatekH743_Pinout.h"
 #include <SoftwareSerial.h>
 #include "IMU.h"
