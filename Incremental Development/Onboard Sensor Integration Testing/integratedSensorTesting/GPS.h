@@ -50,7 +50,7 @@ void initGPS() {
   Serial.println("GNSS serial connected");
 
   myGNSS.setUART1Output(COM_TYPE_UBX);     // Use UBX messages only
-  myGNSS.setNavigationFrequency(50);       // 10 Hz update rate
+  myGNSS.setNavigationFrequency(15);       // 10 Hz update rate
   myGNSS.saveConfiguration();              // Save to flash
 }
 

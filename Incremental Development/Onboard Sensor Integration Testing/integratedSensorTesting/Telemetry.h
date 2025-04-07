@@ -2,10 +2,7 @@
 #define TELEMETRY_H
 
 #include <Arduino.h>
-#include "MatekH743_Pinout.h"
 
-// Function: calculates checksum by XOR-ing every character in the sentence.
-// The input should be the string without the starting '$'.
 inline String calculateChecksum(const String &sentence) {
   byte cs = 0;
   for (size_t i = 0; i < sentence.length(); i++) {
@@ -18,14 +15,12 @@ inline String calculateChecksum(const String &sentence) {
   return hexStr;
 }
 
-// Function: creates a telemetry packet in an NMEA-like format
-// Returns the formatted telemetry packet as a String.
-String createTelemetryPacket(float ax, float ay, float az,
-                             float gx, float gy, float gz,
-                             float imuTemp,
-                             float baroPressure, float baroTemp,
-                             long gpsLat, long gpsLon, long gpsAlt,
-                             byte gpsSIV, int gpsMin, int gpsSec, int gpsMs) {
+inline String createTelemetryPacket(float ax, float ay, float az,
+                                    float gx, float gy, float gz,
+                                    float imuTemp,
+                                    float baroPressure, float baroTemp,
+                                    long gpsLat, long gpsLon, long gpsAlt,
+                                    byte gpsSIV, int gpsMin, int gpsSec, int gpsMs) {
   String packet = "$TELE,";
   packet += String(ax, 2) + ",";
   packet += String(ay, 2) + ",";
@@ -44,7 +39,6 @@ String createTelemetryPacket(float ax, float ay, float az,
   packet += String(gpsSec) + ",";
   packet += String(gpsMs);
 
-  // Calculate checksum on the packet excluding the '$'
   String cs = calculateChecksum(packet.substring(1));
   packet += "*" + cs;
 
