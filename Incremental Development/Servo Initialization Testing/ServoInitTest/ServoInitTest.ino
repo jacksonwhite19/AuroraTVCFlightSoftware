@@ -3,13 +3,14 @@
 // xServo == Motor 3
 // yServo == Motor 4
 #include <Servo.h>
+#include <math.h>
 
 Servo servoX;
 Servo servoY;
 
 const int centerPos = 90;
-const int sweepRange = 12;
-const int stepDelay = 70;  // ms between servo steps
+const int sweepRange = 16;
+const int stepDelay = 35;  // ms between servo steps
 
 int posOffset = 0;
 int direction = 1;
@@ -42,12 +43,12 @@ void loop() {
 
     if (sweepingX) {
       servoX.write(currentPos);
-      servoY.write(centerPos);  // Keep Y centered
+      servoY.write(centerPos);
       Serial.print("Sweeping X → ");
       Serial.println(currentPos);
     } else {
       servoY.write(currentPos);
-      servoX.write(centerPos);  // Keep X centered
+      servoX.write(centerPos);
       Serial.print("Sweeping Y → ");
       Serial.println(currentPos);
     }
@@ -59,10 +60,40 @@ void loop() {
       posOffset += direction;  // Prevent stuttering at endpoints
 
       if (direction > 0) {
-        sweepingX = !sweepingX;  // Switch servo after each full cycle
+        if (!sweepingX) {
+          // Finished Y sweep → now do circular
+          Serial.println("Starting circular sweep");
+          delay(200);
+          doCircularSweep();
+        }
+
+        sweepingX = !sweepingX;  // Switch servo phase
         Serial.println(sweepingX ? "Switching to X axis" : "Switching to Y axis");
-        delay(500);  // Optional pause between switching
+        delay(300);  // Optional pause
       }
     }
   }
+}
+
+void doCircularSweep() {
+  for (int angleDeg = 0; angleDeg <= 360; angleDeg += 5) {
+    float radians = angleDeg * DEG_TO_RAD;
+    int xPos = centerPos + sweepRange * cos(radians);
+    int yPos = centerPos + sweepRange * sin(radians);
+
+    servoX.write(xPos);
+    servoY.write(yPos);
+
+    Serial.print("Circular X: ");
+    Serial.print(xPos);
+    Serial.print(" | Y: ");
+    Serial.println(yPos);
+
+    delay(20);  // Control speed of the circle
+  }
+
+  // Return to center after circle
+  servoX.write(centerPos);
+  servoY.write(centerPos);
+  delay(300);
 }

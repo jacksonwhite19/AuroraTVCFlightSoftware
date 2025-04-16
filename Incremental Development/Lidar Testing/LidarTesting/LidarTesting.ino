@@ -1,97 +1,43 @@
-/*------------------------------------------------------------------------------
+#include <SoftwareSerial.h>
+#include "MatekH743_Pinout.h"
 
-  LIDARLite Arduino Library
-  v3/GetDistanceI2c
+// TFMini Plus is connected to UART7: RX = PE7, TX = PE8
+SoftwareSerial tfminiSerial(UART7_RX_PIN, UART7_TX_PIN);  // RX, TX
 
-  This example shows how to initialize, configure, and read distance from a
-  LIDAR-Lite connected over the I2C interface.
+void setup() {
+  Serial.begin(115200);
+  while (!Serial);  // Wait for Serial Monitor/Plotter to be ready
 
-  Connections:
-  LIDAR-Lite 5 Vdc (red) to Arduino 5v
-  LIDAR-Lite I2C SCL (green) to Arduino SCL
-  LIDAR-Lite I2C SDA (blue) to Arduino SDA
-  LIDAR-Lite Ground (black) to Arduino GND
-
-  (Capacitor recommended to mitigate inrush current when device is enabled)
-  680uF capacitor (+) to Arduino 5v
-  680uF capacitor (-) to Arduino GND
-
-  See the Operation Manual for wiring diagrams and more information:
-  http://static.garmin.com/pumac/LIDAR_Lite_v3_Operation_Manual_and_Technical_Specifications.pdf
-
-------------------------------------------------------------------------------*/
-
-#include <Wire.h>
-#include <LIDARLite.h>
-
-LIDARLite myLidarLite;
-
-void setup()
-{
-  Serial.begin(115200); // Initialize serial connection to display distance readings
-
-  /*
-    begin(int configuration, bool fasti2c, char lidarliteAddress)
-
-    Starts the sensor and I2C.
-
-    Parameters
-    ----------------------------------------------------------------------------
-    configuration: Default 0. Selects one of several preset configurations.
-    fasti2c: Default 100 kHz. I2C base frequency.
-      If true I2C frequency is set to 400kHz.
-    lidarliteAddress: Default 0x62. Fill in new address here if changed. See
-      operating manual for instructions.
-  */
-  myLidarLite.begin(0, true); // Set configuration to default and I2C to 400 kHz
-
-  /*
-    configure(int configuration, char lidarliteAddress)
-
-    Selects one of several preset configurations.
-
-    Parameters
-    ----------------------------------------------------------------------------
-    configuration:  Default 0.
-      0: Default mode, balanced performance.
-      1: Short range, high speed. Uses 0x1d maximum acquisition count.
-      2: Default range, higher speed short range. Turns on quick termination
-          detection for faster measurements at short range (with decreased
-          accuracy)
-      3: Maximum range. Uses 0xff maximum acquisition count.
-      4: High sensitivity detection. Overrides default valid measurement detection
-          algorithm, and uses a threshold value for high sensitivity and noise.
-      5: Low sensitivity detection. Overrides default valid measurement detection
-          algorithm, and uses a threshold value for low sensitivity and noise.
-    lidarliteAddress: Default 0x62. Fill in new address here if changed. See
-      operating manual for instructions.
-  */
-  myLidarLite.configure(0); // Change this number to try out alternate configurations
+  tfminiSerial.begin(115200);  // TFMini default baud rate
+  delay(1000);  // Allow time for sensor to stabilize
 }
 
-void loop()
-{
-  /*
-    distance(bool biasCorrection, char lidarliteAddress)
+void loop() {
+  static uint8_t buf[9];
+  static int i = 0;
 
-    Take a distance measurement and read the result.
+  while (tfminiSerial.available()) {
+    uint8_t c = tfminiSerial.read();
 
-    Parameters
-    ----------------------------------------------------------------------------
-    biasCorrection: Default true. Take aquisition with receiver bias
-      correction. If set to false measurements will be faster. Receiver bias
-      correction must be performed periodically. (e.g. 1 out of every 100
-      readings).
-    lidarliteAddress: Default 0x62. Fill in new address here if changed. See
-      operating manual for instructions.
-  */
+    if (i == 0 && c != 0x59) continue;
+    if (i == 1 && c != 0x59) { i = 0; continue; }
 
-  // Take a measurement with receiver bias correction and print to serial terminal
-  Serial.println(myLidarLite.distance());
+    buf[i++] = c;
 
-  // Take 99 measurements without receiver bias correction and print to serial terminal
-  for(int i = 0; i < 99; i++)
-  {
-    Serial.println(myLidarLite.distance(false));
+    if (i == 9) {
+      uint16_t distance = buf[2] + (buf[3] << 8);
+      uint16_t strength = buf[4] + (buf[5] << 8);
+      uint8_t checksum = 0;
+      for (int j = 0; j < 8; j++) checksum += buf[j];
+
+      if (checksum == buf[8]) {
+        // Output tab-separated values for Serial Plotter
+        Serial.print(distance);
+        Serial.print('\t');
+        Serial.println(strength);
+      }
+
+      i = 0;
+    }
   }
 }
