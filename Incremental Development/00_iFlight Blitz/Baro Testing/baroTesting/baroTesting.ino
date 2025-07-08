@@ -1,54 +1,67 @@
-#include <SPI.h>
 #include <Arduino.h>
 #include <Wire.h>
-#include "BlitzH743.h"       // Provides I2C2_SDA_PIN, I2C2_SCL_PIN, Serial, etc.
-#include <Adafruit_DPS310.h>
-#include <Adafruit_Sensor.h>         // For sensors_event_t
+#include "BlitzH743.h"         // Your custom board file
+#include <Dps3xx.h>            // Infineon XENSIV DPS3xx library
 
-#define DPS310_ADDR 0x76  // Sensor address as detected from your I2C scan
+#define DPS310_ADDR 0x76
 
-// Create a TwoWire instance for I2C2 using board-defined pins
+// Custom I2C bus for your board
 TwoWire myI2C2(PIN_I2C2_SDA, PIN_I2C2_SCL);
 
-// Create an instance of the DPS310 sensor
-Adafruit_DPS310 dps;
+// DPS310 instance
+Dps3xx dps310;
 
 void setup() {
-  // Initialize USB serial communication
   Serial.begin(115200);
   uint32_t startTime = millis();
-  while (!Serial && millis() - startTime < 3000) {
-    delay(10);
-  }
-  Serial.println("DPS310 test starting...");
+  while (!Serial && millis() - startTime < 3000) delay(10);
 
-  // Begin I2C on our custom bus (I2C2)
+  Serial.println("🔍 DPS310 Debug Test (Infineon XENSIV Library)");
+
+  // Start I2C2
   myI2C2.begin();
 
-  // Initialize the DPS310 sensor in I2C mode:
-  // The begin_I2C() function requires the sensor address and a pointer to our TwoWire instance.
-  if (!dps.begin_I2C(DPS310_ADDR, &myI2C2)) {
-    Serial.println("Could not find a valid DPS310 sensor, check wiring!");
-    while (1) { delay(10); }
-  }
-  Serial.println("DPS310 sensor found!");
+  // Initialize sensor — returns void
+  dps310.begin(myI2C2, DPS310_ADDR);
+  Serial.println("✅ DPS310 initialized");
+
+  // Get product ID (returns directly)
+  uint8_t productID = dps310.getProductId();
+  Serial.print("📦 Product ID: 0x");
+  Serial.println(productID, HEX);
+
+  // Optionally configure oversampling
+  // dps310.setPresOversampling(DPS310_8X);
+  // dps310.setTempOversampling(DPS310_8X);
 }
 
 void loop() {
-  // Create event structures for pressure and temperature.
-  sensors_event_t pressure_event, temp_event;
+  float temperature = 0, pressure = 0;
+  int16_t status;
 
-  // Use the unified sensor API to get sensor readings.
-  // getEvents() returns true if the sensor data was successfully updated.
-  if (!dps.getEvents(&pressure_event, &temp_event)) {
-    Serial.println("Sensor read error");
+  // Read temperature
+  status = dps310.measureTempOnce(temperature);
+  if (status == 0) {
+    Serial.print("🌡️ Temperature: ");
+    Serial.print(temperature);
+    Serial.print(" °C, ");
   } else {
-    Serial.print("Pressure: ");
-    Serial.print(pressure_event.pressure);
-    Serial.print(" Pa, Temperature: ");
-    Serial.print(temp_event.temperature);
-    Serial.println(" C");
+    Serial.print("❌ Temp read error (code ");
+    Serial.print(status);
+    Serial.print("), ");
   }
 
-  delay(100);
+  // Read pressure
+  status = dps310.measurePressureOnce(pressure);
+  if (status == 0) {
+    Serial.print("🌪️ Pressure: ");
+    Serial.print(pressure);
+    Serial.println(" Pa");
+  } else {
+    Serial.print("❌ Pressure read error (code ");
+    Serial.print(status);
+    Serial.println(")");
+  }
+
+  delay(500);
 }
