@@ -12,12 +12,16 @@ float baselinePressure = 0.0;
 bool baselineSet = false;
 unsigned long zeroTime = 0;
 
+// EMA filter setup
+float smoothedAltitude = 0.0;
+const float alpha = 0.05;  // 0.05 = strong smoothing, adjust as needed
+
 void setup() {
   Serial.begin(115200);
   uint32_t startTime = millis();
   while (!Serial && millis() - startTime < 3000) delay(10);
 
-  Serial.println("🔍 DPS310 Altitude Plotter");
+  Serial.println("🔍 DPS310 Altitude (ft) with EMA Filter");
 
   myI2C2.begin();
   dps310.begin(myI2C2, DPS310_ADDR);
@@ -28,7 +32,7 @@ void setup() {
   Serial.println(productID, HEX);
 
   zeroTime = millis();
-  Serial.println("Time (ms), Altitude (ft)");  // CSV header for plotting
+  Serial.println("Time (ms), Altitude (ft)");
 }
 
 void loop() {
@@ -36,8 +40,7 @@ void loop() {
   unsigned long now = millis();
 
   if (dps310.measurePressureOnce(pressure_pa) == 0) {
-
-    // After 30s, lock in baseline pressure once
+    // Set baseline after 30 seconds
     if (!baselineSet && (now - zeroTime > 30000)) {
       baselinePressure = pressure_pa;
       baselineSet = true;
@@ -46,18 +49,24 @@ void loop() {
 
     float altitude_ft = 0.0;
     if (baselineSet) {
-      // Compute relative altitude from locked pressure
-      float relPressureRatio = pressure_pa / baselinePressure;
-      altitude_ft = 44330.0 * (1.0 - pow(relPressureRatio, 0.1903)) * 3.28084;
-    }
+      float ratio = pressure_pa / baselinePressure;
+      float altitude_m = 44330.0 * (1.0 - pow(ratio, 0.1903));
+      altitude_ft = altitude_m * 3.28084;
 
-    // Output time and altitude in CSV format
-    Serial.print(now);
-    Serial.print(", ");
-    Serial.println(altitude_ft);
+      // Apply exponential moving average
+      smoothedAltitude = alpha * altitude_ft + (1.0 - alpha) * smoothedAltitude;
+
+      Serial.print(now);
+      Serial.print(", ");
+      Serial.println(smoothedAltitude);
+    } else {
+      // Output 0 before baseline is locked
+      Serial.print(now);
+      Serial.println(", 0");
+    }
   } else {
     Serial.println("❌ Pressure read error");
   }
 
-  delay(100);  // ~10 Hz sampling
+  delay(100);
 }

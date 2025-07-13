@@ -1,58 +1,63 @@
 #ifndef BAROMETER_H
 #define BAROMETER_H
-#include <SPI.h>
-#include "MatekH743_Pinout.h"
+
 #include <Arduino.h>
 #include <Wire.h>
-#include <Adafruit_DPS310.h>
-#include <Adafruit_Sensor.h>
-#include "Telemetry.h"
+#include "BlitzH743.h"
+#include <Dps3xx.h>
 
-// Define the DPS310 I2C address
 #define DPS310_ADDR 0x76
 
-// Create a TwoWire instance for I2C2 using board-defined pins.
-TwoWire myI2C2(I2C2_SDA_PIN, I2C2_SCL_PIN);
+namespace baro {
 
-// Create an instance of the DPS310 sensor.
-Adafruit_DPS310 dps;
+  struct data {
+    float pressure_pa;
+    float altitude_ft;
+    unsigned long timestamp_ms;
+    bool valid;
+  };
 
-// Structure to hold barometer data
-struct BarometerData {
-  float pressure;
-  float temperature;
-};
+  TwoWire i2c(PIN_I2C2_SDA, PIN_I2C2_SCL);
+  Dps3xx sensor;
 
-// Function to initialize the barometer sensor (adapted from your baroTesting.ino setup)
-void initBarometer() {
-  myI2C2.begin();
+  float baselinePressure = 0.0;
+  bool baselineSet = false;
+  unsigned long zeroTime = 0;
 
-  if (!dps.begin_I2C(DPS310_ADDR, &myI2C2)) {
-    Serial.println("Could not find a valid DPS310 sensor, check wiring!");
-    while (1) {
-      delay(10);
+  void begin() {
+    i2c.begin();
+    sensor.begin(i2c, DPS310_ADDR);
+    zeroTime = millis();
+  }
+
+  data read() {
+    data baroData;
+    baroData.timestamp_ms = millis();
+    baroData.pressure_pa = 0.0;
+    baroData.altitude_ft = 0.0;
+    baroData.valid = false;
+
+    float pressure_pa = 0;
+    if (sensor.measurePressureOnce(pressure_pa) == 0) {
+      if (!baselineSet && (baroData.timestamp_ms - zeroTime > 30000)) {
+        baselinePressure = pressure_pa;
+        baselineSet = true;
+      }
+
+      baroData.pressure_pa = pressure_pa;
+      baroData.valid = true;
+
+      if (baselineSet) {
+        float ratio = pressure_pa / baselinePressure;
+        float altitude_m = 44330.0 * (1.0 - pow(ratio, 0.1903));
+        baroData.altitude_ft = altitude_m * 3.28084;
+      } else {
+        baroData.altitude_ft = 0.0;
+      }
     }
+
+    return baroData;
   }
-  Serial.println("DPS310 sensor found!");
 }
 
-// Function to read data from the barometer sensor (adapted from your baroTesting.ino loop)
-BarometerData readBarometer() {
-  BarometerData data;
-  sensors_event_t pressure_event, temp_event;
-
-  if (!dps.getEvents(&pressure_event, &temp_event)) {
-    Serial.println("Sensor read error");
-    // Optionally, you could set error values here.
-    data.pressure = NAN;
-    data.temperature = NAN;
-  } else {
-    data.pressure = pressure_event.pressure;
-    data.temperature = temp_event.temperature;
-    data.temperature = (temp_event.temperature / 333.87) + 21.0;
-  }
-  return data;
-}
-
-#endif // BAROMETER_H
-
+#endif
