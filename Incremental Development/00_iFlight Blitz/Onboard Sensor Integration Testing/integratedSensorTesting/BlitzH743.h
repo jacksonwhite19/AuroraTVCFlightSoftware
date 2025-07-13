@@ -3,6 +3,8 @@
 
 #ifndef BLITZ_H743_H
 #define BLITZ_H743_H
+#include <SPI.h>
+
 
 // ============================
 // ===== MCU Definitions =====
@@ -112,5 +114,5 @@
 #define PIN_BUZZER         PA15  // TIM2_CH1
 #define PIN_VTX_POWER      PD10
 #define PIN_CAM_SWITCH     PD11
-
+SPIClass spi1(PIN_SPI1_MOSI, PIN_SPI1_MISO, PIN_SPI1_SCK, PNUM_NOT_DEFINED);
 #endif // BLITZ_H743_H
