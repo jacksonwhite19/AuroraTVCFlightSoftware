@@ -1,48 +1,42 @@
-#include <Wire.h>
-#include <BlitzH743.h>
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h>
+SFE_UBLOX_GNSS myGNSS;
 
-SFE_UBLOX_GNSS gps;
-HardwareSerial GPSSerial(PIN_SERIAL4_RX, PIN_SERIAL4_TX);  // PB8 = RX, PB9 = TX
-
-void initializeGPS();
-void readGPS();
+// Blitz H743: PB8 (RX), PB9 (TX) = UART4
+HardwareSerial ss(PIN_SERIAL4_RX, PIN_SERIAL4_TX); // RX, TX
 
 void setup() {
   Serial.begin(115200);
-  while (!Serial) {}
-  initializeGPS();
-}
+  delay(1000);
+  Serial.println("Connecting to HGLRC M100 via UBX...");
 
-void loop() {
-
-  readGPS();
-}
-
-
-void initializeGPS() {
-  GPSSerial.begin(115200); // Use 115200 if confirmed in Betaflight
-  if (!gps.begin(GPSSerial)) {
-    Serial.println("GPS not detected. Check wiring and baud rate.");
+  ss.begin(115200); // Most M100 modules default to 115200
+  if (!myGNSS.begin(ss)) {
+    Serial.println("GNSS not detected. Check wiring and baud rate.");
     while (1);
   }
 
-  Serial.println("GPS initialized!");
+  Serial.println("GNSS connected!");
 
-  gps.setI2COutput(COM_TYPE_UBX); // Just UBX messages
-  gps.setNavigationFrequency(5); // 5Hz update rate
-  gps.setAutoPVT(true);          // Enable automatic position updates
+  myGNSS.setUART1Output(COM_TYPE_UBX); // Use only UBX binary
+  myGNSS.setNavigationFrequency(10);  // 10 Hz updates
+  myGNSS.saveConfiguration();         // Save config to flash
 }
 
-void readGPS() {
-  if (gps.getPVT()) {
+void loop() {
+  if (myGNSS.getPVT()) {
+    // Convert raw data to readable values
+    float lat = myGNSS.getLatitude() / 1e7;   // degrees
+    float lon = myGNSS.getLongitude() / 1e7;  // degrees
+    float alt = myGNSS.getAltitude() / 1000.0; // meters
+    byte sats = myGNSS.getSIV();              // satellites in view
+
     Serial.print("Lat: ");
-    Serial.print(gps.getLatitude() / 1e7, 7);
-    Serial.print(", Lon: ");
-    Serial.print(gps.getLongitude() / 1e7, 7);
-    Serial.print(", Alt: ");
-    Serial.print(gps.getAltitude() / 1000.0);
-    Serial.print(" m, SIV: ");
-    Serial.println(gps.getSIV());
+    Serial.print(lat, 7); // show full precision
+    Serial.print("°  Lon: ");
+    Serial.print(lon, 7);
+    Serial.print("°  Alt: ");
+    Serial.print(alt, 2);
+    Serial.print(" m  SIV: ");
+    Serial.println(sats);
   }
 }
